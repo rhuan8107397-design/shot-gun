@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Advanced FPS Arena</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="ui">
+<div id="crosshair">
+<div class="ch-line ch-top"></div>
+<div class="ch-line ch-bottom"></div>
+<div class="ch-line ch-left"></div>
+<div class="ch-line ch-right"></div>
+<div class="ch-center"></div>
+<div id="crosshairCircle"></div>
+<div id="killX"></div>
+</div>
+
+<div
+id="adsDot"
+
+style="
+position:absolute;
+left:50%;
+top:50%;
+width:2px;
+height:2px;
+background:red;
+transform:translate(-50%,-50%);
+opacity:0;
+pointer-events:none;
+z-index:20;
+"
+></div>
+
+<div id="hud">
+<div>HP: <span id="hp">100</span></div>
+<div>Armor: <span id="armorVal">0</span></div>
+<div>Weapon: <span id="weapon">步枪</span></div>
+<div>Ammo: <span id="ammo">30</span></div>
+<div>Reserve: <span id="reserve">120</span></div>
+<div id="grenadeChargeWrap" style="margin-top:4px;width:120px;height:6px;background:#1a331a;border:1px solid #33ff33;opacity:0;">
+  <div id="grenadeChargeBar" style="width:0%;height:100%;background:#33ff77;"></div>
+</div>
+<div>Wave: <span id="wave">1</span></div>
+<div>TIME: <span id="timeText">00:00</span></div>
+<div style="margin-top:6px;width:200px;height:8px;background:#173322;border:1px solid #44aa66;">
+    <div id="staminaBar" style="width:100%;height:100%;background:#33ff77;"></div>
+</div>
+</div>
+
+<div id="killFeed" style="
+position:absolute;
+right:20px;
+top:80px;
+display:flex;
+flex-direction:column;
+gap:6px;
+pointer-events:none;
+z-index:50;
+"></div>
+
+<div id="score">
+
+<div
+id="comboText"
+
+style="
+position:absolute;
+right:20px;
+top:70px;
+font-size:32px;
+font-weight:bold;
+color:red;
+opacity:0;
+transition:.3s;
+"
+>
+COMBO x1
+</div>
+Score: <span id="scoreText">0</span>
+</div>
+
+<div id="centerText"></div>
+<div
+id="bossBarWrap"
+style="
+position:absolute;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+width:400px;
+height:16px;
+background:rgba(0,0,0,.7);
+border:2px solid #aa00ff;
+display:none;
+z-index:20;
+"
+>
+
+<div
+id="bossBar"
+style="
+width:100%;
+height:100%;
+background:#aa00ff;
+"
+></div>
+
+</div>
+<div id="pickupText"></div>
+<div id="damage"></div>
+<div id="lowHpTop" class="lowHpEdge lowHpTop"></div>
+<div id="lowHpBottom" class="lowHpEdge lowHpBottom"></div>
+<div id="lowHpLeft" class="lowHpEdge lowHpLeft"></div>
+<div id="lowHpRight" class="lowHpEdge lowHpRight"></div>
+<div
+id="damageNumberLayer"
+style="
+position:absolute;
+inset:0;
+pointer-events:none;
+overflow:hidden;
+"
+></div>
+
+<div id="minimap">
+<div id="minimapWalls"></div>
+<div id="minimapEnemies"></div>
+<div id="minimapCone"></div>
+<div id="minimapPlayer"></div>
+</div>
+
+<div id="flashTop" class="flashEdge flashTop"></div>
+<div id="flashBottom" class="flashEdge flashBottom"></div>
+<div id="flashLeft" class="flashEdge flashLeft"></div>
+<div id="flashRight" class="flashEdge flashRight"></div>
+
+<div id="startMenu" class="menu">
+<h1>FPS ARENA</h1>
+<div style="width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);margin:-4px 0 16px;"></div>
+<p>WASD 移动 · 鼠标视角</p>
+<p>1 主武器 · 2 手枪 · 3 近战 · 4 手雷</p>
+<p>R 换弹 · 空格跳跃 · 右键瞄准</p>
+<p>T 商店 · Shift 冲刺 · Ctrl 滑铲</p>
+<button id="startBtn">进入战场</button>
+</div>
+
+<div id="pauseMenu" class="menu hidden">
+<h1>已暂停</h1>
+<button id="resumeBtn">继续游戏</button>
+<button id="settingsBtn" style="margin-top:8px;">准星设置</button>
+</div>
+
+<div id="crosshairSettings" class="menu hidden">
+<h2>准星自定义</h2>
+<div id="chPresets" class="ch-presets-wrap"></div>
+<div style="margin:12px 0;">
+<label>颜色: <input type="color" id="chColorPicker" value="#ffffff"></label>
+</div>
+<div style="margin:12px 0;">
+<label>透明度: <span id="chOpacityVal">100%</span>
+<input type="range" id="chOpacitySlider" min="0.3" max="1" step="0.05" value="1"></label>
+</div>
+<div style="margin:12px 0;">
+<label><input type="checkbox" id="chOutlineCheck" checked> 黑色描边</label>
+</div>
+<button id="chSaveBtn">应用</button>
+<button id="chBackBtn" style="background:transparent;border:1px solid rgba(200,150,60,0.3);color:var(--text-dim);">返回</button>
+</div>
+
+<div id="endMenu" class="menu hidden">
+<h1 id="endTitle"></h1>
+<div id="stats"></div>
+<button onclick="location.reload()">重新开始</button>
+</div>
+
+<div id="shopMenu" class="menu hidden">
+<div class="shop-container">
+<div class="shop-header">
+<span class="shop-hdr-deco"></span>
+<h1>军械商店</h1>
+<span class="shop-hdr-deco"></span>
+</div>
+<div id="shopScore" class="shop-score"><span>CREDITS</span><b>0</b></div>
+<div class="shop-columns">
+<div class="shop-panel shop-panel-gear">
+<div class="shop-panel-label"><i>◆</i> 武器 & 补给</div>
+<div id="shopWeapons"></div>
+</div>
+<div class="shop-panel shop-panel-aug">
+<div class="shop-panel-label"><i>▲</i> 属性强化</div>
+<div id="shopBuffs"></div>
+</div>
+</div>
+<button id="closeShopBtn" class="shop-close-btn">离开商店</button>
+</div>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="core.js"></script>
+<script src="weapons.js"></script>
+<script src="enemies.js"></script>
+<script src="player.js"></script>
+<script src="ui.js"></script>
+<script src="main.js"></script>
+
+</body>
+</html>

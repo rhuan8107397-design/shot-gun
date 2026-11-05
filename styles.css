@@ -1,0 +1,431 @@
+/* ===========================================
+   FPS ARENA — Tactical Industrial UI
+   =========================================== */
+
+:root{
+  --amber:#c8963c;
+  --amber-dim:rgba(200,150,60,0.5);
+  --amber-glow:rgba(200,150,60,0.3);
+  --steel:#151b22;
+  --steel-light:#1e2630;
+  --panel-bg:rgba(10,14,20,0.9);
+  --text-warm:#d4c9b8;
+  --text-dim:#8899aa;
+  --red:#c0392b;
+  --red-glow:rgba(192,57,43,0.5);
+  --armor-blue:#4a7d9c;
+  --green:#4a9c5d;
+  --white-rgba:rgba(255,255,255,0.12);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;}
+
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:#000;
+  font-family:'Courier New',monospace;
+  color:var(--text-warm);
+}
+
+canvas{display:block;}
+
+#ui{
+  position:fixed;inset:0;pointer-events:none;
+  font-family:'Courier New',monospace;
+}
+
+/* ============================================
+   CROSSHAIR
+   ============================================ */
+#crosshair{
+  position:absolute;left:50%;top:50%;
+  width:0;height:0;pointer-events:none;z-index:100;
+  --ch-color:#ffffff;--ch-outline:#000000;
+}
+.ch-line{
+  position:absolute;
+  background:var(--ch-color);
+  box-shadow:0 0 0 1px var(--ch-outline),0 0 8px var(--ch-color);
+}
+.ch-top,.ch-bottom{width:2px;height:6px;left:-1px;}
+.ch-left,.ch-right{width:6px;height:2px;top:-1px;}
+.ch-center{
+  position:absolute;width:2px;height:2px;left:-1px;top:-1px;opacity:0;
+  background:var(--ch-color);box-shadow:0 0 0 1px var(--ch-outline);
+}
+#crosshairCircle{
+  position:absolute;border-radius:50%;display:none;
+  border:2px solid var(--ch-color);
+  box-shadow:0 0 0 1px var(--ch-outline),0 0 10px var(--ch-color);
+}
+.ch-line.hit-body{background:#ff3333!important;box-shadow:0 0 8px #ff3333!important;}
+.ch-line.hit-head{background:#ffcc00!important;box-shadow:0 0 12px #ffcc00!important;transform:scale(1.3);}
+.ch-center.hit-body{background:#ff3333!important;}
+.ch-center.hit-head{background:#ffcc00!important;}
+
+/* Kill X */
+#killX{
+  position:absolute;left:50%;top:50%;width:24px;height:24px;
+  transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none;z-index:101;
+}
+#killX::before,#killX::after{
+  content:'';position:absolute;width:24px;height:3px;
+  background:var(--amber);box-shadow:0 0 10px var(--amber);left:0;top:10px;
+}
+#killX::before{transform:rotate(45deg);}
+#killX::after{transform:rotate(-45deg);}
+#killX.active{opacity:1;transform:translate(-50%,-50%) scale(1);animation:killXPop 0.15s ease-out;}
+@keyframes killXPop{
+  0%{transform:translate(-50%,-50%) scale(0.5);opacity:0;}
+  50%{transform:translate(-50%,-50%) scale(1.2);opacity:1;}
+  100%{transform:translate(-50%,-50%) scale(1.0);opacity:1;}
+}
+@keyframes comboPop{0%{transform:scale(1);}50%{transform:scale(1.5);}100%{transform:scale(1);}}
+
+/* ============================================
+   HUD — Bottom Left
+   ============================================ */
+#hud{
+  position:absolute;left:20px;bottom:24px;
+  font-size:15px;line-height:2.2;letter-spacing:1px;
+  text-shadow:0 0 12px rgba(0,0,0,0.8);
+}
+#hud div{color:var(--text-dim);}
+#hud span{color:var(--text-warm);font-weight:bold;}
+#hp{color:var(--red)!important;}
+#armorVal{color:var(--armor-blue)!important;}
+#weapon{color:var(--amber)!important;}
+#staminaBar{
+  height:6px;border-radius:1px;
+  background:var(--green);transition:width 0.2s,background 0.3s;
+  border-bottom:2px solid rgba(74,156,93,0.6);
+}
+#staminaBar[style*="width: 100%"]{border-bottom-color:rgba(74,156,93,0.3);}
+
+/* Grenade charge */
+#grenadeChargeWrap{
+  margin-top:4px;width:120px;height:5px;
+  background:rgba(0,0,0,0.5);border:1px solid rgba(74,156,93,0.3);
+}
+#grenadeChargeBar{height:100%;background:var(--green);transition:width 0.05s linear;}
+
+/* ============================================
+   SCORE — Top Right
+   ============================================ */
+#score{
+  position:absolute;right:20px;top:230px;
+  font-size:13px;letter-spacing:2px;color:var(--text-dim);
+}
+#score span{color:var(--amber);font-size:22px;font-weight:bold;}
+#comboText{
+  position:absolute;right:20px;top:70px;
+  font-size:28px;font-weight:bold;letter-spacing:3px;
+  color:var(--amber);opacity:0;transition:.3s;
+  text-shadow:0 0 15px var(--amber-glow);
+}
+
+/* ============================================
+   KILL FEED — Right Side
+   ============================================ */
+#killFeed{
+  position:absolute;right:20px;top:100px;
+  display:flex;flex-direction:column;gap:4px;
+  pointer-events:none;z-index:50;
+}
+#killFeed div{
+  padding:5px 10px;font-size:12px;letter-spacing:1px;
+  background:rgba(0,0,0,0.6);
+  border-left:2px solid var(--amber);
+  color:var(--text-warm);
+  animation:killFeedIn 0.25s ease-out;
+}
+@keyframes killFeedIn{
+  0%{transform:translateX(60px);opacity:0;}
+  100%{transform:translateX(0);opacity:1;}
+}
+
+/* ============================================
+   BOSS BAR — Top Center
+   ============================================ */
+#bossBarWrap{
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  width:420px;height:14px;
+  background:rgba(0,0,0,.7);border:1px solid rgba(170,0,255,0.4);
+  display:none;z-index:20;
+  box-shadow:0 0 20px rgba(170,0,255,0.15);
+}
+#bossBarWrap::before,#bossBarWrap::after{
+  content:'';position:absolute;top:-2px;width:8px;height:8px;
+  border:2px solid rgba(170,0,255,0.6);background:transparent;
+}
+#bossBarWrap::before{left:-2px;border-right:none;border-bottom:none;}
+#bossBarWrap::after{right:-2px;border-left:none;border-bottom:none;}
+#bossBar{height:100%;background:linear-gradient(90deg,rgba(170,0,255,0.6),rgba(170,0,255,0.9));transition:width 0.2s;}
+
+/* ============================================
+   CENTER TEXT — Wave / Kills
+   ============================================ */
+#centerText{
+  position:absolute;left:50%;top:42%;transform:translateX(-50%);
+  font-size:48px;font-weight:bold;letter-spacing:6px;
+  color:var(--amber);opacity:0;transition:.3s;
+  text-shadow:0 0 30px var(--amber-glow),0 2px 0 rgba(0,0,0,0.6);
+  text-transform:uppercase;
+}
+
+/* ============================================
+   PICKUP TEXT
+   ============================================ */
+#pickupText{
+  position:absolute;left:50%;top:55%;transform:translateX(-50%);
+  font-size:30px;font-weight:bold;letter-spacing:3px;
+  opacity:0;transition:1s;
+}
+
+/* ============================================
+   DAMAGE FLASH
+   ============================================ */
+#damage{
+  position:absolute;inset:0;background:rgba(180,30,20,0.3);
+  opacity:0;transition:.15s;
+}
+
+/* Low HP vignette */
+.lowHpEdge{
+  position:absolute;pointer-events:none;opacity:0;
+  transition:opacity .3s;z-index:8;
+}
+.lowHpTop{
+  left:0;top:0;width:100%;height:18%;
+  background:linear-gradient(to bottom,rgba(180,30,20,.6),transparent);
+}
+.lowHpBottom{
+  left:0;bottom:0;width:100%;height:18%;
+  background:linear-gradient(to top,rgba(180,30,20,.6),transparent);
+}
+.lowHpLeft{
+  left:0;top:0;width:18%;height:100%;
+  background:linear-gradient(to right,rgba(180,30,20,.6),transparent);
+}
+.lowHpRight{
+  right:0;top:0;width:18%;height:100%;
+  background:linear-gradient(to left,rgba(180,30,20,.6),transparent);
+}
+
+/* Flash edges (headshot slowmo) */
+.flashEdge{
+  position:absolute;pointer-events:none;opacity:0;
+  transition:none;z-index:9;background:rgba(255,255,255,0.6);
+}
+.flashTop{left:0;top:0;width:100%;height:16%;}
+.flashBottom{left:0;bottom:0;width:100%;height:16%;}
+.flashLeft{left:0;top:0;width:16%;height:100%;}
+.flashRight{right:0;top:0;width:16%;height:100%;}
+
+/* ============================================
+   DAMAGE NUMBERS
+   ============================================ */
+#damageNumberLayer{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+  font-family:'Courier New',monospace;font-weight:bold;font-size:18px;
+  letter-spacing:1px;
+}
+
+/* ============================================
+   MINIMAP — Top Right Circle
+   ============================================ */
+#minimap{
+  position:absolute;right:20px;top:20px;
+  width:190px;height:190px;border-radius:50%;
+  border:2px solid rgba(200,150,60,0.3);
+  background:rgba(8,10,14,0.75);
+  overflow:hidden;z-index:10;
+  box-shadow:0 0 16px rgba(0,0,0,0.5),inset 0 0 20px rgba(0,0,0,0.3);
+}
+#minimapCone{
+  position:absolute;
+  left:73px;top:73px;
+  width:44px;height:44px;
+  background:rgba(0,200,255,0.12);
+  clip-path:polygon(50% 0%, 0% 100%, 100% 100%);
+  transform-origin:center center;z-index:3;
+  pointer-events:none;
+}
+#minimapPlayer{
+  position:absolute;
+  left:87px;top:87px;
+  width:14px;height:14px;
+  background:#ffffff;
+  clip-path:polygon(50% 0%, 0% 100%, 100% 100%);
+  transform-origin:center center;z-index:5;
+  filter:drop-shadow(0 0 4px rgba(255,255,255,0.8));
+}
+@keyframes minimapPulse{
+  0%,100%{filter:drop-shadow(0 0 6px rgba(0,200,255,0.9));}
+  50%{filter:drop-shadow(0 0 12px rgba(0,200,255,1));}
+}
+.minimapDot{
+  position:absolute;border-radius:50%;
+  transform:translate(-50%,-50%);z-index:2;
+}
+.minimapWall{
+  position:absolute;
+  background:rgba(200,150,60,0.12);
+  transform-origin:left center;z-index:1;
+}
+
+/* ============================================
+   MENUS — Shared
+   ============================================ */
+.menu{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;
+  background:radial-gradient(ellipse at 50% 40%,rgba(18,26,34,0.9) 0%,rgba(4,8,12,0.97) 100%);
+  backdrop-filter:blur(6px);
+  pointer-events:auto;
+}
+.hidden{display:none;}
+
+h1{
+  font-size:56px;margin-bottom:12px;
+  font-family:'Courier New',monospace;
+  letter-spacing:8px;font-weight:900;
+  color:var(--amber);
+  text-shadow:0 0 40px var(--amber-glow),0 2px 0 rgba(0,0,0,0.5);
+}
+h2{
+  font-family:'Courier New',monospace;letter-spacing:4px;
+  color:var(--amber);font-size:26px;margin-bottom:8px;
+}
+p{
+  font-size:16px;letter-spacing:2px;
+  color:var(--text-dim);margin:4px 0;
+  font-family:'Courier New',monospace;
+}
+
+/* Generic button */
+button{
+  padding:14px 36px;font-size:16px;font-weight:bold;
+  letter-spacing:3px;border:none;border-radius:2px;
+  background:var(--amber);color:#0d1114;
+  cursor:pointer;margin-top:14px;
+  text-transform:uppercase;
+  transition:all 0.12s;
+  font-family:'Courier New',monospace;
+}
+button:hover{background:#e0a84c;transform:translateY(-1px);box-shadow:0 4px 16px var(--amber-glow);}
+
+/* Menu decorative line */
+.menu::before{
+  content:'';position:absolute;
+  top:15%;width:120px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);
+}
+
+/* Settings menu */
+#crosshairSettings .ch-presets-wrap{
+  display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;
+  justify-content:center;max-width:400px;
+}
+#crosshairSettings label{color:var(--text-dim);font-size:14px;letter-spacing:1px;}
+#crosshairSettings input[type="range"]{accent-color:var(--amber);}
+
+/* ============================================
+   SHOP — Already redesigned, keep
+   ============================================ */
+#shopMenu{background:radial-gradient(ellipse at 50% 30%,rgba(20,28,35,0.92) 0%,rgba(6,10,14,0.97) 100%);}
+.shop-container{
+  display:flex;flex-direction:column;align-items:center;
+  gap:18px;max-width:780px;width:100%;padding:30px 40px 25px;
+}
+.shop-header{display:flex;align-items:center;gap:20px;}
+.shop-header h1{
+  font-size:42px;font-weight:900;letter-spacing:8px;
+  color:var(--amber);text-shadow:0 0 30px var(--amber-glow),0 2px 0 rgba(0,0,0,0.5);
+  margin:0;text-transform:uppercase;
+}
+.shop-hdr-deco{
+  display:block;width:80px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);
+  position:relative;
+}
+.shop-hdr-deco::after{
+  content:'';position:absolute;left:50%;top:-4px;
+  width:6px;height:6px;background:var(--amber);
+  transform:translateX(-50%) rotate(45deg);
+}
+.shop-score{
+  font-size:16px;letter-spacing:3px;color:var(--text-dim);
+  background:rgba(0,0,0,0.5);border:1px solid rgba(200,150,60,0.2);
+  padding:8px 24px;border-radius:3px;
+  display:flex;align-items:center;gap:12px;
+}
+.shop-score span{color:var(--text-dim);font-size:11px;letter-spacing:2px;}
+.shop-score b{color:var(--amber);font-size:28px;font-weight:bold;}
+.shop-columns{display:flex;gap:24px;width:100%;justify-content:center;}
+.shop-panel{
+  flex:1;max-width:340px;
+  background:linear-gradient(180deg,rgba(16,22,28,0.9) 0%,rgba(12,18,22,0.95) 100%);
+  border:1px solid rgba(200,150,60,0.25);border-radius:2px;
+  padding:16px;position:relative;
+}
+.shop-panel::before{
+  content:'';position:absolute;top:-1px;left:12px;right:12px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--amber-dim),transparent);
+}
+.shop-panel-label{
+  font-size:13px;font-weight:bold;letter-spacing:3px;
+  color:var(--text-dim);margin-bottom:12px;padding-bottom:10px;
+  border-bottom:1px solid var(--white-rgba);
+  display:flex;align-items:center;gap:6px;
+}
+.shop-panel-gear .shop-panel-label i{color:var(--amber);}
+.shop-panel-aug .shop-panel-label i{color:var(--green);}
+#shopWeapons,#shopBuffs{display:flex;flex-direction:column;gap:5px;}
+.shopButton{
+  display:flex;justify-content:space-between;align-items:center;
+  width:100%;padding:10px 12px;
+  background:linear-gradient(180deg,rgba(30,38,46,0.8) 0%,rgba(20,26,32,0.9) 100%);
+  border:1px solid var(--white-rgba);border-radius:2px;
+  color:var(--text-warm);font-size:13px;cursor:pointer;pointer-events:auto;
+  transition:all 0.12s;text-align:left;position:relative;overflow:hidden;
+}
+.shopButton::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:transparent;transition:background 0.15s;
+}
+.shopButton:hover{
+  background:linear-gradient(180deg,rgba(40,48,58,0.9) 0%,rgba(28,36,42,0.95) 100%);
+  border-color:rgba(200,150,60,0.4);color:var(--amber);
+  transform:translateX(2px);
+}
+.shopButton:hover::after{background:var(--amber-dim);}
+.shopButton.disabled{opacity:0.35;cursor:not-allowed;filter:grayscale(0.6);}
+.shopButton.disabled:hover{transform:none;border-color:var(--white-rgba);color:var(--text-warm);}
+.shopButton.disabled:hover::after{background:transparent;}
+.shopButton span:first-child{flex:1;}
+.shopButton span:last-child{
+  font-size:12px;color:var(--text-dim);margin-left:8px;white-space:nowrap;
+}
+.shopButton:not(.disabled) span:last-child{color:var(--amber);}
+.shopButton small{opacity:0.45;font-size:11px;}
+.shop-close-btn{
+  margin-top:4px;padding:10px 40px;font-size:13px;font-weight:bold;
+  letter-spacing:3px;text-transform:uppercase;
+  background:transparent;border:1px solid rgba(200,150,60,0.3);border-radius:2px;
+  color:var(--text-dim);cursor:pointer;transition:all 0.15s;
+}
+.shop-close-btn:hover{
+  background:rgba(200,150,60,0.1);border-color:var(--amber-dim);color:var(--amber);
+}
+
+/* ============================================
+   END MENU STATS
+   ============================================ */
+#stats{
+  margin-top:20px;font-size:20px;text-align:center;line-height:2;
+  color:var(--text-warm);letter-spacing:2px;
+}
+#stats div{font-family:'Courier New',monospace;}
+#endTitle{font-size:42px;letter-spacing:10px;}
